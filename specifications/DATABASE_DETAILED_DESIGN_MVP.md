@@ -1,4 +1,4 @@
-# 📊 データベース詳細設計書
+# 📊 データベース詳細設計書（MVP版）
 # おつかいポイント MVP版
 
 ---
@@ -7,124 +7,77 @@
 
 | 項目 | 内容 |
 |------|------|
-| **文書タイトル** | おつかいポイント データベース詳細設計書 |
+| **文書タイトル** | おつかいポイント データベース詳細設計書（MVP版） |
 | **バージョン** | v2.0 (MVP最適化版) |
-| **作成日** | 2025年09月23日 |
-| **最終更新** | 2025年09月28日 |
+| **作成日** | 2025年09月28日 |
 | **作成者** | ビジネスロジック担当エンジニア |
-| **承認状況** | **修正版・承認待ち** |
+| **承認状況** | ドラフト |
 | **対象読者** | DevOpsエンジニア、フロントエンドエンジニア、QAエンジニア |
 
 ---
 
-## 🎯 1. 設計概要
+## 🎯 1. MVP設計概要
 
-### 1.1 MVP重視設計への修正
+### 1.1 設計方針変更
 
-本設計書v2.0は、**MVP本質重視**への全面的な見直し版です。
+この設計書は、前回のDB設計を**MVP本質重視**へ全面的に見直したものです。
 
-#### 修正理由（技術チームリーダー指摘事項）
+#### 問題点の修正
 ```
-❌ 前版の問題点：
-- notifications, list_templates, cache_family_members等のMVP不要テーブル
-- family_member_limit_check, active_list_limit_check等のMVP逸脱機能  
-- check_data_integrity, detect_suspisioc_activity等の過剰機能
-- 15個の過剰インデックス
-- 25個に細分化されたRLSポリシー
+❌ 削除した過剰機能：
+- notifications テーブル (MVP不要)
+- list_templates テーブル (MVP不要)  
+- cache_family_members テーブル (MVP不要)
+- auth_failure_log テーブル (MVP不要)
+- permission_error_log テーブル (MVP不要)
+- shopping_lists_archive テーブル (MVP不要)
+- offline_operations テーブル (MVP不要)
+- extension_impact_log テーブル (MVP不要)
 
-✅ MVP最適化方針：
-- 5テーブル限定（お買い物リスト共有の本質のみ）
-- 5インデックス限定（最小限のパフォーマンス確保）
-- 5RLSポリシー限定（シンプルなセキュリティ）
-- MVP逸脱機能の完全削除
+❌ 削除した過剰な制約・トリガー：
+- family_member_limit_check (MVP不要)
+- active_list_limit_check (MVP不要)
+- check_data_integrity() (MVP不要)
+- detect_suspisioc_activity() (MVP不要)
+
+❌ 削除した過剰なインデックス：
+- 15個→5個に削減（MVP最小限）
 ```
 
-#### 1.1.1 社長KPI達成への貢献
-- **コード削減80%**: 過剰テーブル・機能削除による大幅削減（2,000行→400行）
-- **拡張性20%以下**: シンプル構造による変更率最小化
-- **リリース確実性**: MVP集中による実装確実性向上
+### 1.2 MVP最適化目標
 
-#### 1.1.2 MVP技術目標
 - **シンプル性最優先**: お買い物リスト共有の本質のみ実装
 - **5テーブル限定**: users, families, family_members, shopping_lists, shopping_items
-- **最小限機能**: 過剰な制約・監視・ログ機能削除
-
-### 1.2 前提条件・参照文書
-- ✅ ビジネスロジック詳細設計書（完成: 2025年09月23日）
-- ✅ データベース基本設計書（役員承認完了: 2025年09月23日）
-- ✅ システムアーキテクチャ設計書 v1.3（役員承認済み）
-- ✅ プロダクト要求仕様書 (PRD) v1.1
-
-### 1.3 技術仕様準拠
-- **PostgreSQL 15**: Supabase 2.6.0標準構成・最新機能活用
-- **RLS詳細実装**: ビジネスロジック層と連携したセキュリティ設計
-- **インデックス最適化**: パフォーマンス要件達成のための詳細設計
-- **トランザクション設計**: データ整合性確保・並行処理対応
+- **5インデックス限定**: 最小限のパフォーマンス確保
+- **シンプルRLS**: 過度に細分化されたポリシーを統合
 
 ---
 
-## 🏗️ 2. テーブル定義詳細
+## 🏗️ 2. MVP必須5テーブル設計
 
-### 2.1 本番環境実行可能SQL
-
-#### 2.1.1 users テーブル
+### 2.1 users テーブル
 
 ```sql
 -- ===============================================
--- ユーザー管理テーブル
--- 設計根拠: ビジネスロジック User エンティティに対応
+-- ユーザー管理テーブル（MVP基本機能のみ）
 -- ===============================================
-CREATE TABLE IF NOT EXISTS users (
-    -- 主キー
+CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    
-    -- 認証連携
     auth_id UUID NOT NULL UNIQUE,
-    
-    -- ユーザー情報
-    name VARCHAR(20) NOT NULL CHECK (LENGTH(TRIM(name)) BETWEEN 1 AND 20),
+    name VARCHAR(50) NOT NULL,
     role VARCHAR(10) NOT NULL CHECK (role IN ('parent', 'child')),
-    
-    -- メタデータ
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    -- 制約
-    CONSTRAINT users_auth_id_unique UNIQUE (auth_id),
-    CONSTRAINT users_name_not_empty CHECK (TRIM(name) != ''),
-    CONSTRAINT users_name_no_html CHECK (name !~ '[<>\"''&]')
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- コメント
-COMMENT ON TABLE users IS 'ユーザー管理テーブル - ビジネスロジック User エンティティに対応';
-COMMENT ON COLUMN users.id IS 'ユーザーID（UUID v4）';
-COMMENT ON COLUMN users.auth_id IS 'Supabase認証ID（auth.users.idとの外部キー）';
-COMMENT ON COLUMN users.name IS 'ユーザー名（1-20文字、HTMLタグ禁止）';
-COMMENT ON COLUMN users.role IS 'ユーザー役割（parent: 親, child: 子）';
-COMMENT ON COLUMN users.created_at IS '作成日時（タイムゾーン付き）';
-COMMENT ON COLUMN users.updated_at IS '更新日時（自動更新トリガー対象）';
-
--- 更新日時自動更新トリガー
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+COMMENT ON TABLE users IS 'ユーザー管理（MVP基本機能）';
 ```
 
-#### 2.1.2 families テーブル
+### 2.2 families テーブル
 
 ```sql
 -- ===============================================
 -- 家族グループ管理テーブル
--- 設計根拠: ビジネスロジック Family エンティティに対応
 -- ===============================================
 CREATE TABLE families (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -136,56 +89,31 @@ CREATE TABLE families (
 );
 
 COMMENT ON TABLE families IS '家族グループ管理';
-COMMENT ON COLUMN families.name IS '家族名';
-COMMENT ON COLUMN families.invite_code IS 'QRコード招待コード';
-COMMENT ON COLUMN families.created_by_user_id IS '家族グループ作成者';
-
--- 更新日時自動更新トリガー
-CREATE TRIGGER update_families_updated_at 
-    BEFORE UPDATE ON families 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
 ```
 
-#### 2.1.3 family_members テーブル
+### 2.3 family_members テーブル
 
 ```sql
 -- ===============================================
--- 家族メンバー管理テーブル（多対多中間テーブル）
--- 設計根拠: ビジネスロジック FamilyMember エンティティに対応
+-- 家族メンバー関係テーブル
 -- ===============================================
-CREATE TABLE IF NOT EXISTS family_members (
-    -- 主キー
+CREATE TABLE family_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    
-    -- 関係データ
-    family_id UUID NOT NULL,
-    user_id UUID NOT NULL,
-    
-    -- メンバー情報
+    family_id UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
-    -- 外部キー制約
-    CONSTRAINT family_members_family_id_fkey 
-        FOREIGN KEY (family_id) REFERENCES families(id) 
-        ON DELETE CASCADE,
-    CONSTRAINT family_members_user_id_fkey 
-        FOREIGN KEY (user_id) REFERENCES users(id) 
-        ON DELETE CASCADE,
-    
-    -- ユニーク制約（重複参加防止）
-    CONSTRAINT family_members_unique UNIQUE (family_id, user_id)
+    UNIQUE(family_id, user_id)
 );
 
 COMMENT ON TABLE family_members IS '家族メンバー関係管理';
 ```
 
-#### 2.1.4 shopping_lists テーブル
+### 2.4 shopping_lists テーブル
 
 ```sql
 -- ===============================================
 -- お買い物リスト管理テーブル
--- 設計根拠: ビジネスロジック ShoppingList エンティティに対応
 -- ===============================================
 CREATE TABLE shopping_lists (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -197,41 +125,13 @@ CREATE TABLE shopping_lists (
 );
 
 COMMENT ON TABLE shopping_lists IS 'お買い物リスト管理';
-
--- 更新日時自動更新トリガー
-CREATE TRIGGER update_shopping_lists_updated_at 
-    BEFORE UPDATE ON shopping_lists 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
-
--- アクティブリスト数制限チェック関数
-CREATE OR REPLACE FUNCTION check_active_list_limit()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.status = 'active' AND (
-        SELECT COUNT(*) 
-        FROM shopping_lists 
-        WHERE family_id = NEW.family_id AND status = 'active' AND id != COALESCE(OLD.id, '00000000-0000-0000-0000-000000000000'::uuid)
-    ) >= 3 THEN
-        RAISE EXCEPTION 'アクティブなリストは最大3個までです';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- アクティブリスト数制限トリガー
-CREATE TRIGGER active_list_limit_check
-    BEFORE INSERT OR UPDATE ON shopping_lists
-    FOR EACH ROW
-    EXECUTE FUNCTION check_active_list_limit();
 ```
 
-#### 2.1.5 shopping_items テーブル
+### 2.5 shopping_items テーブル
 
 ```sql
 -- ===============================================
 -- お買い物アイテム管理テーブル
--- 設計根拠: ビジネスロジック ShoppingItem エンティティに対応
 -- ===============================================
 CREATE TABLE shopping_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -246,19 +146,13 @@ CREATE TABLE shopping_items (
 );
 
 COMMENT ON TABLE shopping_items IS 'お買い物アイテム管理';
-
--- 更新日時自動更新トリガー
-CREATE TRIGGER update_shopping_items_updated_at 
-    BEFORE UPDATE ON shopping_items 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ---
 
-## 📊 3. MVP最小限インデックス設計（5個のみ）
+## 📈 3. MVP最小限インデックス（5個のみ）
 
-### 3.1 MVP必須インデックス（5個のみ）
+### 3.1 必須インデックス設計
 
 ```sql
 -- ===============================================
@@ -380,13 +274,29 @@ CREATE POLICY shopping_items_policy ON shopping_items
 -- 更新日時自動更新（MVP最小限）
 -- ===============================================
 
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- 各テーブルに更新日時トリガー適用
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON users 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_families_updated_at 
     BEFORE UPDATE ON families 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_shopping_lists_updated_at 
     BEFORE UPDATE ON shopping_lists 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_shopping_items_updated_at 
+    BEFORE UPDATE ON shopping_items 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
@@ -593,8 +503,7 @@ RLSポリシー数:
 ---
 
 **作成者**: ビジネスロジック担当エンジニア  
-**作成日**: 2025年09月23日  
+**作成日**: 2025年09月28日  
 **修正版**: v2.0 (MVP最適化版)  
-**最終更新**: 2025年09月28日  
 **承認待ち**: 技術チームリーダー  
 **MVP重視**: 5テーブル・5インデックス・5RLSポリシーの最小構成達成

@@ -1,3 +1,11 @@
+# Ignore all env files
+*.env
+
+# Ignore all lock files
+*.lock
+
+# Ignore all build files
+*.build
 
 # Internal project files
 team_profiles/

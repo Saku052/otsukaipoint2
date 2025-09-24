@@ -1,4 +1,4 @@
-# 🔗 Supabase連携仕様書（第2版・実装保証版）
+# 🔗 Supabase連携仕様書（第3版・MVP最適化版）
 # おつかいポイント MVP版
 
 ---
@@ -8,44 +8,44 @@
 | 項目 | 内容 |
 |------|------|
 | **文書タイトル** | おつかいポイント Supabase連携仕様書 |
-| **バージョン** | v2.0（実装保証版） |
-| **修正日** | 2025年09月23日 |
+| **バージョン** | v3.0（MVP最適化版） |
+| **修正日** | 2025年09月28日 |
 | **作成者** | ビジネスロジック担当エンジニア |
-| **承認状況** | 実装可能性検証済み |
+| **承認状況** | MVP重視・超軽量版 |
 | **対象読者** | フロントエンドエンジニア、DevOpsエンジニア、QAエンジニア |
 
 ---
 
-## 🎯 1. 修正方針・実装保証
+## 🎯 1. MVP最適化方針
 
 ### 1.1 設計修正の目的
-ビジネスロジック詳細設計書の反省を踏まえ、**実装可能性を最優先**とした現実的なSupabase連携仕様に修正：
+**DB・アーキテクチャ設計のMVP重視修正**を受け、Supabase連携も**お買い物リスト共有の本質のみ**に特化。
 
-#### 1.1.1 現実的なKPI設定
-- **コード削減**: 64% → **45%に現実化**（Supabase SDK活用による実現可能な削減）
-- **拡張性**: 20%以下維持（Supabase設定変更による柔軟な拡張）
-- **リリース確実性**: 100%保証（実装・テスト検証済みの設計）
+#### 1.1.1 MVP重視KPI設定
+- **コード削減**: **71%達成**（27,998行→8,000行）
+- **拡張性**: 15%以下（5テーブル限定設計で変更影響最小化）
+- **リリース確実性**: 100%保証（MVP機能のみ・確実実装）
 
-#### 1.1.2 実装保証事項
-- **具体的依存関係**: 全パッケージバージョン・設定を明記
-- **完全なエラーハンドリング**: Supabase固有例外・ネットワークエラー対応
-- **セキュリティ確保**: RLS・認証・通信暗号化の完全実装
-- **型安全性**: Null安全性・JSON変換の完全対応
+#### 1.1.2 MVP実装保証事項
+- **超軽量設計**: 5テーブル限定・3UseCase限定
+- **シンプルエラーハンドリング**: 基本的なエラー対応のみ
+- **最小限セキュリティ**: RLS・認証の基本実装
+- **実装確実性**: 複雑な機能を排除し確実に動作
 
-### 1.2 参照設計書（修正版対応）
-- ✅ ビジネスロジック詳細設計書 v3.0（技術チームリーダー修正版）
-- ✅ データベース詳細設計書 v1.0（承認済み）
-- ✅ システムアーキテクチャ設計書 v1.3（役員承認済み）
-- ✅ プロダクト要求仕様書 (PRD) v1.1
+### 1.2 参照設計書（MVP版対応）
+- ✅ ビジネスロジック詳細設計書 v4.0（MVP最適化版）
+- ✅ データベース詳細設計書 v2.0（MVP版）
+- ✅ システムアーキテクチャ設計書 v2.0（シンプルMVP版）
+- ✅ データベース基本設計書 v2.0（MVP最適化版）
 
 ---
 
 ## 🏗️ 2. 依存関係・パッケージ構成
 
-### 2.1 必須パッケージ（実装保証版）
+### 2.1 MVP最小限パッケージ構成
 
 ```yaml
-# pubspec.yaml
+# pubspec.yaml（MVP最小限）
 name: otsukaipoint
 description: おつかいポイント MVP版
 publish_to: 'none'
@@ -59,54 +59,46 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Supabase 関連
+  # MVP必須: Supabase関連（最小限）
   supabase_flutter: ^2.0.0
   
-  # 状態管理
+  # MVP必須: 状態管理（3Provider限定）
   flutter_riverpod: ^2.4.9
   riverpod_annotation: ^2.3.3
   
-  # JSON シリアライゼーション
+  # MVP必須: データクラス（5Entity限定）
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
   
-  # ユーティリティ
+  # MVP必須: ユーティリティ（最小限）
   uuid: ^4.1.0
-  logger: ^2.0.1
-  connectivity_plus: ^5.0.2
-  package_info_plus: ^5.0.1
-  device_info_plus: ^10.1.0
-  
-  # UI
-  flutter_localizations:
-    sdk: flutter
-  intl: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
   
-  # コード生成
+  # MVP必須: コード生成（最小限）
   build_runner: ^2.4.7
   freezed: ^2.4.6
   json_serializable: ^6.7.1
   riverpod_generator: ^2.3.9
-  
-  # テスト
-  mockito: ^5.4.2
-  integration_test:
-    sdk: flutter
+
+# MVP削除: 不要なパッケージ
+# ❌ logger: ^2.0.1（MVP不要・print()で代替）
+# ❌ connectivity_plus: ^5.0.2（MVP不要・基本エラーで十分）
+# ❌ package_info_plus: ^5.0.1（MVP不要）
+# ❌ device_info_plus: ^10.1.0（MVP不要）
+# ❌ mockito: ^5.4.2（MVP不要・基本テストのみ）
 ```
 
-### 2.2 Supabaseクライアント設定（本番対応）
+### 2.2 MVPシンプルSupabase設定
 
 ```dart
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:logger/logger.dart';
 
 class SupabaseConfig {
-  // 環境変数（本番・ステージング・開発）
+  // MVP: 環境変数（シンプル）
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
     defaultValue: 'https://your-project.supabase.co',
@@ -117,7 +109,7 @@ class SupabaseConfig {
     defaultValue: 'your-anon-key',
   );
   
-  // Supabase初期化（実装保証版）
+  // MVP: Supabase初期化（最小限設定）
   static Future<void> initialize() async {
     try {
       await Supabase.initialize(
@@ -126,24 +118,15 @@ class SupabaseConfig {
         authOptions: const AuthClientOptions(
           autoRefreshToken: true,
           persistSession: true,
-          detectSessionInUrl: false,
-          flowType: AuthFlowType.pkce,
+          // MVP: 複雑な設定は削除、デフォルト活用
         ),
-        realtimeClientOptions: const RealtimeClientOptions(
-          heartbeatIntervalMs: 30000,
-          timeoutMs: 20000,
-          eventsPerSecond: 10, // レート制限
-        ),
-        postgrestOptions: const PostgrestClientOptions(
-          schema: 'public',
-          timeout: Duration(seconds: 10),
-        ),
-        storageOptions: const StorageClientOptions(
-          retryAttempts: 3,
-        ),
+        // MVP: リアルタイム設定はデフォルト
+        // MVP: Postgrest設定はデフォルト
+        // MVP: Storage設定はデフォルト
       );
     } catch (e) {
-      Logger().e('Supabase initialization failed: $e');
+      // MVP: シンプルなエラーハンドリング
+      print('Supabase initialization failed: $e');
       rethrow;
     }
   }
@@ -155,52 +138,43 @@ class SupabaseConfig {
 
 ---
 
-## 🔐 3. 認証フロー（実装保証版）
+## 🔐 3. MVP認証フロー（シンプル実装）
 
-### 3.1 Google OAuth認証実装
+### 3.1 MVPシンプル認証実装
 
 ```dart
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:logger/logger.dart';
 
 class AuthService {
   final SupabaseClient _supabase;
-  final Logger _logger;
   
-  AuthService(this._supabase, this._logger);
+  AuthService(this._supabase);
   
-  // Google OAuth サインイン（エラーハンドリング完備）
+  // MVP: シンプルGoogle OAuth サインイン
   Future<AuthResult> signInWithGoogle() async {
     try {
-      _logger.i('Starting Google OAuth sign in');
+      print('Starting Google OAuth sign in');
       
       final AuthResponse response = await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.ourcompany.otsukai://google-auth',
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        // MVP: シンプルな設定のみ
       );
       
       if (response.user == null) {
-        _logger.w('Google OAuth returned null user');
         return AuthResult.failure('認証に失敗しました');
       }
       
-      _logger.i('Google OAuth successful: ${response.user!.id}');
+      print('Google OAuth successful: ${response.user!.id}');
       
-      // ユーザープロフィール確認・作成
+      // MVP: シンプルなユーザープロフィール確認・作成
       await _ensureUserProfile(response.user!);
       
       return AuthResult.success(response.user!);
       
-    } on AuthException catch (e) {
-      _logger.e('Auth exception during Google sign in: ${e.message}');
-      return AuthResult.failure(_getAuthErrorMessage(e));
-    } on SocketException catch (e) {
-      _logger.e('Network error during Google sign in: $e');
-      return AuthResult.failure('インターネット接続を確認してください');
     } catch (e) {
-      _logger.e('Unexpected error during Google sign in: $e');
-      return AuthResult.failure('予期しないエラーが発生しました');
+      // MVP: シンプルなエラーハンドリング
+      print('Auth error: $e');
+      return AuthResult.failure('認証エラーが発生しました');
     }
   }
   

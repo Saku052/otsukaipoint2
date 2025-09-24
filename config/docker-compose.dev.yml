@@ -1,0 +1,256 @@
+# 開発環境用Docker Compose設定
+# Development Environment Docker Compose Configuration
+
+version: '3.8'
+
+services:
+  # =====================================
+  # Supabase Local Development Stack
+  # =====================================
+  supabase-studio:
+    image: supabase/studio:20240101-b08c5d2
+    container_name: otsukaipoint-supabase-studio
+    restart: unless-stopped
+    environment:
+      - SUPABASE_URL=http://supabase-kong:8000
+      - SUPABASE_REST_URL=http://localhost:8000/rest/v1/
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - LOGFLARE_API_KEY=${LOGFLARE_API_KEY}
+      - LOGFLARE_URL=http://supabase-analytics:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - supabase-kong
+      - supabase-auth
+      - supabase-rest
+    networks:
+      - otsukaipoint-dev
+
+  supabase-kong:
+    image: kong:2.8.1
+    container_name: otsukaipoint-supabase-kong
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+    volumes:
+      - ./supabase/volumes/api/kong.yml:/var/lib/kong/kong.yml:ro
+    networks:
+      - otsukaipoint-dev
+
+  supabase-auth:
+    image: supabase/gotrue:v2.143.0
+    container_name: otsukaipoint-supabase-auth
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${ENABLE_GOOGLE_OAUTH}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${SITE_URL}/auth/v1/callback
+    depends_on:
+      - supabase-db
+    networks:
+      - otsukaipoint-dev
+
+  supabase-rest:
+    image: postgrest/postgrest:v12.0.1
+    container_name: otsukaipoint-supabase-rest
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    depends_on:
+      - supabase-db
+    networks:
+      - otsukaipoint-dev
+
+  supabase-realtime:
+    image: supabase/realtime:v2.25.35
+    container_name: otsukaipoint-supabase-realtime
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DB_HOST: supabase-db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq
+      ERL_AFLAGS: -proto_dist inet_tcp
+      ENABLE_TAILSCALE: "false"
+      DNS_NODES: "''"
+    depends_on:
+      - supabase-db
+    networks:
+      - otsukaipoint-dev
+
+  supabase-storage:
+    image: supabase/storage-api:v0.43.11
+    container_name: otsukaipoint-supabase-storage
+    restart: unless-stopped
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+    volumes:
+      - ./supabase/volumes/storage:/var/lib/storage:z
+    depends_on:
+      - supabase-db
+      - supabase-rest
+    networks:
+      - otsukaipoint-dev
+
+  supabase-imgproxy:
+    image: darthsim/imgproxy:v3.8.0
+    container_name: otsukaipoint-supabase-imgproxy
+    restart: unless-stopped
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_ENABLE_WEBP_DETECTION: ${IMGPROXY_ENABLE_WEBP_DETECTION}
+    volumes:
+      - ./supabase/volumes/storage:/var/lib/storage:z
+    networks:
+      - otsukaipoint-dev
+
+  supabase-db:
+    image: supabase/postgres:15.1.0.117
+    container_name: otsukaipoint-supabase-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXPIRY}
+    volumes:
+      - ./supabase/volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      - ./supabase/volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      - ./supabase/volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      - ./supabase/volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      - supabase-db-data:/var/lib/postgresql/data:Z
+    networks:
+      - otsukaipoint-dev
+
+  # =====================================
+  # 開発支援ツール
+  # =====================================
+  pgadmin:
+    image: dpage/pgadmin4:8.0
+    container_name: otsukaipoint-pgadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@otsukaipoint.dev
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - supabase-db
+    networks:
+      - otsukaipoint-dev
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: otsukaipoint-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - otsukaipoint-dev
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: otsukaipoint-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - otsukaipoint-dev
+
+  # =====================================
+  # 開発環境監視・ログ
+  # =====================================
+  supabase-analytics:
+    image: supabase/logflare:1.4.0
+    container_name: otsukaipoint-supabase-analytics
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      LOGFLARE_NODE_HOST: 127.0.0.1
+      DB_USERNAME: supabase_admin
+      DB_DATABASE: postgres
+      DB_HOSTNAME: supabase-db
+      DB_PORT: 5432
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SCHEMA: _analytics
+      LOGFLARE_API_KEY: ${LOGFLARE_API_KEY}
+      LOGFLARE_SINGLE_TENANT: true
+      LOGFLARE_SUPABASE_MODE: true
+      LOGFLARE_MIN_CLUSTER_SIZE: 1
+    depends_on:
+      - supabase-db
+    networks:
+      - otsukaipoint-dev
+
+# =====================================
+# ネットワーク・ボリューム設定
+# =====================================
+networks:
+  otsukaipoint-dev:
+    driver: bridge
+    name: otsukaipoint-dev
+
+volumes:
+  supabase-db-data:
+    name: otsukaipoint-supabase-db-data
+  pgadmin-data:
+    name: otsukaipoint-pgadmin-data
+  redis-data:
+    name: otsukaipoint-redis-data
