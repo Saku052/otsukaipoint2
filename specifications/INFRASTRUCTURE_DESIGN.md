@@ -22,7 +22,7 @@
 
 **最小限インフラ方針**:
 - ✅ **バックエンド**: Supabase BaaS 100%活用
-- ✅ **フロントエンド**: Flutter Web + Firebase Hosting
+- ✅ **フロントエンド**: Flutter Android/iOS ネイティブアプリ
 - ✅ **CI/CD**: GitHub Actions 20行
 - ✅ **サーバー管理**: 不要（Supabase任せ）
 
@@ -35,6 +35,7 @@
 - Kubernetes
 - ロードバランサー
 - CDN設定
+- Webホスティング（Firebase Hosting等）
 - 複雑なネットワーク構成
 - インフラ監視ツール
 - 独自SSL証明書管理
@@ -80,9 +81,9 @@
 
 ---
 
-## 📱 3. フロントエンド インフラ
+## 📱 3. モバイルアプリ インフラ
 
-### 3.1 Flutter アプリ配布
+### 3.1 Flutter ネイティブアプリ配布
 
 **Android配布**:
 ```yaml
@@ -90,18 +91,20 @@
 - name: Build Android APK
   run: flutter build apk --release
   
-- name: Upload to Google Play (手動)
+- name: Upload to Google Play Console (手動)
   # 初期MVPは手動アップロード
+  # APKファイルを直接アップロード
 ```
 
 **iOS配布**:
 ```yaml
 # GitHub Actions でビルド
-- name: Build iOS
+- name: Build iOS IPA
   run: flutter build ios --release
   
-- name: Upload to App Store (手動)
+- name: Upload to App Store Connect (手動)
   # 初期MVPは手動アップロード
+  # IPAファイルを直接アップロード
 ```
 
 ### 3.2 アプリ設定
@@ -271,36 +274,16 @@ class APILimiter {
 
 ---
 
-## 📊 7. 監視・ログ（Supabase標準）
+## 📊 7. 基本監視（MVP最小限）
 
-### 7.1 Supabase ダッシュボード監視
+### 7.1 Supabase ダッシュボード確認のみ
 
-**監視項目**:
-- **API使用量**: 月間制限チェック
-- **データベース使用量**: ストレージ・接続数
-- **認証**: ログイン数・エラー率
-- **リアルタイム**: 接続数・メッセージ数
+**月次確認項目**:
+- **API使用量**: 制限チェック（5分）
+- **データベース使用量**: 容量確認（2分）
+- **認証**: エラー有無確認（1分）
 
-### 7.2 アプリケーション監視
-
-```dart
-// 基本的なパフォーマンス監視
-class SimpleMonitor {
-  static void logAPICall(String endpoint, int responseTime) {
-    if (responseTime > 2000) {
-      print('[SLOW] $endpoint: ${responseTime}ms');
-    }
-  }
-  
-  static void logError(String operation, String error) {
-    print('[ERROR] $operation: $error');
-  }
-  
-  static void logUserAction(String action) {
-    print('[USER] $action');
-  }
-}
-```
+**アプリ監視**: なし（MVP不要）
 
 ---
 
@@ -381,24 +364,15 @@ MVP段階（〜1,000ユーザー）:
 
 ### 10.1 日常運用（最小限）
 
-```
-📋 日次運用チェックリスト（5分）:
-□ Supabaseダッシュボード確認
-□ API使用量チェック
-□ エラーログ確認
-□ ユーザー報告チェック
-□ バックアップ状況確認
-```
+**運用作業**: なし（MVP期間中は運用レス）
 
 ### 10.2 定期メンテナンス
 
 ```
-🔄 定期メンテナンス（月次・30分）:
-□ Supabaseアップデート確認
-□ Flutter SDK更新
-□ 依存関係更新
-□ セキュリティアップデート
-□ ログクリーンアップ
+🔄 月次メンテナンス（10分）:
+□ Supabaseダッシュボード確認
+□ API使用量確認
+□ Flutter SDK更新確認
 ```
 
 ---

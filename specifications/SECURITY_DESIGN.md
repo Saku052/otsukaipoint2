@@ -252,35 +252,20 @@ class APISecurityHelper {
 
 ---
 
-## 📋 6. セキュリティ監査（最小限）
+## 📋 6. セキュリティ監査（MVP不要）
 
-### 6.1 基本ログ監視
+### 6.1 MVP期間中の監査
 
-```dart
-// lib/services/security_logger.dart（超シンプル）
-class SecurityLogger {
-  static void logAuthEvent(String event, String userId) {
-    print('[SECURITY] 認証イベント: $event - User: $userId');
-  }
-  
-  static void logDataAccess(String operation, String resource) {
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? 'unknown';
-    print('[SECURITY] データアクセス: $operation - Resource: $resource - User: $userId');
-  }
-  
-  static void logSecurityViolation(String violation) {
-    print('[SECURITY] セキュリティ違反: $violation');
-  }
-}
-```
+**監査方針**: なし（MVP期間中は監査レス）
 
-### 6.2 Supabase監査ログ
+### 6.2 Supabase標準ログのみ
 
-**標準監査項目**:
+**自動記録項目**:
 - **ログイン・ログアウト**: Supabase Auth自動記録
-- **データアクセス**: PostgreSQLログ
+- **データアクセス**: PostgreSQL標準ログ
 - **API呼び出し**: Supabaseダッシュボード
-- **エラー**: アプリケーションログ
+
+**カスタムログ**: 実装しない（MVP不要）
 
 ---
 
@@ -385,8 +370,8 @@ const apiKey = String.fromEnvironment('API_KEY');
 // ❌ 悪い例
 print('パスワード: $password');
 
-// ✅ 良い例
-print('認証処理完了');
+// ✅ 良い例（MVP：print不使用）
+// 認証処理のみ、ログ出力なし
 ```
 
 ---
