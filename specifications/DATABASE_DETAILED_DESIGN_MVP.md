@@ -33,6 +33,7 @@
 - shopping_lists_archive テーブル (MVP不要)
 - offline_operations テーブル (MVP不要)
 - extension_impact_log テーブル (MVP不要)
+- invite_code フィールド (家族IDを直接使用でシンプル化)
 
 ❌ 削除した過剰な制約・トリガー：
 - family_member_limit_check (MVP不要)
@@ -82,7 +83,6 @@ COMMENT ON TABLE users IS 'ユーザー管理（MVP基本機能）';
 CREATE TABLE families (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
-    invite_code VARCHAR(20) NOT NULL UNIQUE,
     created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -162,8 +162,8 @@ COMMENT ON TABLE shopping_items IS 'お買い物アイテム管理';
 -- 1. 認証ID検索（ログイン時使用）
 CREATE INDEX idx_users_auth_id ON users(auth_id);
 
--- 2. 招待コード検索（QRコードスキャン時使用）
-CREATE INDEX idx_families_invite_code ON families(invite_code);
+-- 2. 家族ID検索（QRコードスキャン時はfamily_idを直接使用）
+-- MVPではinvite_codeを削除し、family_idを直接QRコードに含む
 
 -- 3. 家族メンバー取得（家族ID→メンバー一覧）
 CREATE INDEX idx_family_members_family_id ON family_members(family_id);
@@ -357,7 +357,7 @@ INSERT INTO users (auth_id, name, role) VALUES
 ('550e8400-e29b-41d4-a716-446655440001', 'たろう', 'child');
 
 -- サンプル家族
-INSERT INTO families (name, invite_code, created_by_user_id) VALUES 
+INSERT INTO families (name, created_by_user_id) VALUES 
 ('田中家', 'ABC123', (SELECT id FROM users WHERE name = 'ママ'));
 
 -- 家族メンバー追加
@@ -405,7 +405,7 @@ RLSポリシー数:
 ```
 ✅ 残した核心機能:
 - ユーザー管理（認証連携）
-- 家族グループ管理（QRコード招待）
+- 家族グループ管理（QRコードに家族IDを直接含む招待）
 - お買い物リスト管理
 - お買い物アイテム管理
 - リアルタイム同期（Supabase標準機能使用）
