@@ -6,7 +6,7 @@ import 'services/supabase_test_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Supabase初期化
   try {
     await Supabase.initialize(
@@ -17,7 +17,7 @@ void main() async {
   } catch (e) {
     print('❌ Supabase初期化失敗: $e');
   }
-  
+
   runApp(ProviderScope(child: const MyApp()));
 }
 
@@ -81,13 +81,13 @@ class _MyHomePageState extends State<MyHomePage> {
       _counter++;
     });
   }
-  
+
   void _runSupabaseTest() async {
     setState(() {
       _testing = true;
       _testResult = 'テスト実行中...';
     });
-    
+
     try {
       final results = await _testService.runAllTests();
       final allPassed = results.values.every((result) => result);
@@ -150,9 +150,9 @@ class _MyHomePageState extends State<MyHomePage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _testing ? null : _runSupabaseTest,
-              child: _testing 
-                ? const CircularProgressIndicator()
-                : const Text('Supabase接続テスト実行'),
+              child: _testing
+                  ? const CircularProgressIndicator()
+                  : const Text('Supabase接続テスト実行'),
             ),
             const SizedBox(height: 40),
             const Text('カウンターテスト:'),
