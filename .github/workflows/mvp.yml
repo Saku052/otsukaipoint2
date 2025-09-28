@@ -5,7 +5,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [develop, staging, main]
+    branches: [develop, staging, main, feature/**]
     paths-ignore:
       - '*.md'
       - 'docs/**'
