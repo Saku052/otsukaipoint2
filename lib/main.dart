@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config/supabase_config.dart';
+import 'services/supabase_test_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Supabase初期化
+  try {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+    print('🎉 Supabase初期化成功');
+  } catch (e) {
+    print('❌ Supabase初期化失敗: $e');
+  }
+  
+  runApp(ProviderScope(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -55,16 +72,35 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  final _testService = SupabaseTestService();
+  String _testResult = 'テスト未実行';
+  bool _testing = false;
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
+  }
+  
+  void _runSupabaseTest() async {
+    setState(() {
+      _testing = true;
+      _testResult = 'テスト実行中...';
+    });
+    
+    try {
+      final results = await _testService.runAllTests();
+      final allPassed = results.values.every((result) => result);
+      setState(() {
+        _testResult = allPassed ? '✅ 全テスト成功' : '❌ 一部テスト失敗';
+        _testing = false;
+      });
+    } catch (e) {
+      setState(() {
+        _testResult = '❌ テスト実行エラー: $e';
+        _testing = false;
+      });
+    }
   }
 
   @override
@@ -104,7 +140,22 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+            const Text('おつかいポイント - 接続テスト'),
+            const SizedBox(height: 20),
+            Text(
+              _testResult,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _testing ? null : _runSupabaseTest,
+              child: _testing 
+                ? const CircularProgressIndicator()
+                : const Text('Supabase接続テスト実行'),
+            ),
+            const SizedBox(height: 40),
+            const Text('カウンターテスト:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
