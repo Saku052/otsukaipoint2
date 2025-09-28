@@ -60,17 +60,12 @@ class SupabaseTestService {
     try {
       print('⚡ Supabaseリアルタイムテスト開始...');
       
-      // リアルタイムチャンネル作成テスト
-      final channel = _client.channel('test_channel');
+      // リアルタイムチャンネル作成テスト（Supabase接続確認のみ）
+      _client.channel('test_channel');
       
-      // チャンネルが作成できればOK
-      if (channel != null) {
-        print('✅ Supabaseリアルタイム機能アクセス成功');
-        return true;
-      } else {
-        print('❌ リアルタイムチャンネル作成失敗');
-        return false;
-      }
+      // チャンネルが作成できればOK（常に非nullが返される）
+      print('✅ Supabaseリアルタイム機能アクセス成功');
+      return true;
     } catch (e) {
       print('❌ Supabaseリアルタイムテストエラー: $e');
       return false;
