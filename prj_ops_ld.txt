@@ -1,0 +1,171 @@
+承認ステータス
+判定: 承認不可
+理由: MVP原則から逸脱、過度な複雑化
+要求: 要再提出
+削除すべきパッケージ
+# 以下は全てMVP不要（削除必須）
+logger: ^2.0.1
+connectivity_plus: ^5.0.2
+package_info_plus: ^5.0.1
+device_info_plus: ^10.1.0
+mockito: ^5.4.2
+
+Copy
+MVP必須パッケージのみ
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.0.0
+  flutter_riverpod: ^2.4.9
+  freezed_annotation: ^2.4.1
+  
+dev_dependencies:
+  build_runner: ^2.4.7
+  freezed: ^2.4.6
+
+Copy
+推奨MVP実装（全300行以内）
+main.dart
+void main() async {
+  await Supabase.initialize(
+    url: 'YOUR_URL',
+    anonKey: 'YOUR_KEY',
+  );
+  runApp(MyApp());
+}
+
+Copy
+
+Download
+1. 認証サービス（超シンプル）
+class AuthService {
+  Future<void> signInWithGoogle() async {
+    await Supabase.instance.client.auth.signInWithOAuth(
+      OAuthProvider.google
+    );
+  }
+  
+  Future<void> signOut() async {
+    await Supabase.instance.client.auth.signOut();
+  }
+}
+
+Copy
+2. データサービス（超シンプル）
+class DataService {
+  Future<List<Map>> getLists(String familyId) async {
+    return await Supabase.instance.client
+        .from('shopping_lists')
+        .select()
+        .eq('family_id', familyId);
+  }
+  
+  Future<void> addItem(String listId, String name) async {
+    await Supabase.instance.client
+        .from('shopping_items')
+        .insert({'list_id': listId, 'name': name});
+  }
+  
+  Future<void> completeItem(String itemId) async {
+    await Supabase.instance.client
+        .from('shopping_items')
+        .update({'completed': true})
+        .eq('id', itemId);
+  }
+}
+
+Copy
+
+Download
+3. リアルタイムサービス（超シンプル）
+class RealtimeService {
+  void subscribeToList(String listId) {
+    Supabase.instance.client
+        .channel('list_$listId')
+        .on(RealtimeListenTypes.postgresChanges,
+            ChannelFilter(event: '*', schema: 'public'),
+            (payload, [ref]) {
+              // 更新通知
+              print('Data changed: $payload');
+            })
+        .subscribe();
+  }
+  
+  void unsubscribe(String listId) {
+    Supabase.instance.client
+        .channel('list_$listId')
+        .unsubscribe();
+  }
+}
+
+Copy
+
+Download
+Provider定義（3つのみ）
+final authProvider = Provider((ref) => AuthService());
+final dataProvider = Provider((ref) => DataService());
+final realtimeProvider = Provider((ref) => RealtimeService());
+
+Copy
+画面実装例
+class ListScreen extends ConsumerWidget {
+  final String familyId;
+  
+  const ListScreen({required this.familyId});
+  
+  Widget build(context, ref) {
+    final data = ref.watch(dataProvider);
+    
+    return FutureBuilder(
+      future: data.getLists(familyId),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('エラー: ${snapshot.error}');
+        }
+        if (!snapshot.hasData) {
+          return CircularProgressIndicator();
+        }
+        
+        final lists = snapshot.data!;
+        return ListView.builder(
+          itemCount: lists.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(lists[index]['title']),
+              onTap: () {
+                // リスト詳細へ
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+Copy
+
+Download
+削除必須機能一覧
+❌ Logger（print()で代替）
+❌ NetworkManager（不要）
+❌ SessionManager（Supabase自動管理）
+❌ PerformanceMonitor（MVP不要）
+❌ ErrorHandler詳細実装（try-catchで十分）
+❌ テスト環境設定（MVP後）
+❌ 監視・ログ機能（MVP後）
+❌ 複雑な例外クラス階層
+❌ PostgrestException詳細分岐
+❌ デバイス情報取得
+❌ パフォーマンス測定
+❌ エラー追跡
+修正要求サマリー
+1. 上記の超シンプル実装（300行以内）に全面改訂
+2. 不要な機能・パッケージの完全削除
+3. 3Provider制限の厳守
+4. エラーハンドリングは基本的なtry-catchのみ
+5. ログはprint()のみ使用
+KPI達成基準
+コード削減目標: 71%（8,000行以内）
+現在の設計予測: 20,000行超（失敗）
+推奨設計予測: 300行（成功）
