@@ -121,6 +121,7 @@ web/
 # *.env  # Commented out - CI/CD needs access to env files
 .env.local
 .env.*.local
+.mcp.json
 
 # Configuration files
 config/development.env
