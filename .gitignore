@@ -117,8 +117,8 @@ web/
 # Environment & Configuration Files
 # ===================================
 
-# Environment files (KEEP FOR CI/CD)
-# *.env  # Commented out - CI/CD needs access to env files
+# Environment files
+.env
 .env.local
 .env.*.local
 .mcp.json
