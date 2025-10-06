@@ -32,4 +32,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          bot_name: "claude_leader"
+          prompt: "あなたはソフトウェアエンジニアチームのリーダーです。日本語で返信してください。"
           trigger_phrase: "@claude"
