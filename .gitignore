@@ -1,13 +1,245 @@
-# Ignore all env files
-*.env
+# ===================================
+# Flutter & Dart GitIgnore
+# ===================================
 
-# Ignore all lock files
-*.lock
+# Files and directories created by pub
+.dart_tool/
+.packages
+build/
+pubspec.lock  # Exclude for applications, include for packages
 
-# Ignore all build files
-*.build
+# Dart compilation artifacts
+*.dart.js
+*.js_
+*.js.deps
+*.js.map
+.metadata
 
-# Internal project files
+# Flutter build artifacts
+/build/
+
+# Web related
+lib/generated_plugin_registrant.dart
+
+# ===================================
+# IDE & Editor Files
+# ===================================
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+
+# Emacs
+*~
+
+# Vim
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ===================================
+# Platform-specific Build Files
+# ===================================
+
+# Android related
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+android/.cxx/
+android/key.properties
+android/**/*.keystore
+android/**/*.jks
+
+# iOS related
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Pod/
+ios/Pods/
+ios/Podfile.lock
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.moved-aside
+ios/**/*.pbxuser
+ios/**/*.perspectivev3
+ios/**/xcuserdata
+ios/**/DerivedData/
+ios/**/*sync/
+ios/**/.generated/
+
+# macOS related
+macos/Flutter/GeneratedPluginRegistrant.swift
+macos/Flutter/ephemeral/
+
+# Linux related
+linux/flutter/ephemeral/
+
+# Windows related
+windows/flutter/ephemeral/
+
+# Web related
+web/
+
+# ===================================
+# Environment & Configuration Files
+# ===================================
+
+# Environment files (KEEP FOR CI/CD)
+# *.env  # Commented out - CI/CD needs access to env files
+.env.local
+.env.*.local
+.mcp.json
+
+# Configuration files
+config/development.env
+config/production.env
+config/staging.env
+
+# Secrets (NEVER commit these)
+**/*_secrets.json
+**/*_private_key.json
+**/google-services.json  # Android Firebase config
+**/GoogleService-Info.plist  # iOS Firebase config
+**/*.p12
+**/*.mobileprovision
+
+# ===================================
+# Testing & Coverage
+# ===================================
+
+# Test coverage
+coverage/
+test/coverage/
+lcov.info
+
+# Test related
+test_driver/
+integration_test/reports/
+
+# ===================================
+# CI/CD Related (Keep these for automation)
+# ===================================
+
+# GitHub Actions artifacts (allow workflows)
+# .github/  # Commented out - needed for CI/CD
+
+# Fastlane
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/screenshots
+ios/fastlane/test_output
+android/fastlane/report.xml
+android/fastlane/Preview.html
+android/fastlane/screenshots
+android/fastlane/test_output
+
+# ===================================
+# Dependency & Package Files
+# ===================================
+
+# Node modules (if using)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# CocoaPods
+ios/Pods/
+ios/Podfile.lock
+
+# ===================================
+# Temporary & Cache Files
+# ===================================
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Log files
+*.log
+logs/
+
+# Cache directories
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/package_config.json
+
+# ===================================
+# Project-specific Exclusions
+# ===================================
+
+# Internal project documentation
 team_profiles/
 investigation_reports/
 incident_reports/
+
+# Build artifacts
+*.build
+*.ipa
+*.apk
+*.aab
+*.dmg
+
+# Firebase specific
+.firebaserc
+firebase.json
+functions/node_modules/
+
+# Supabase specific
+supabase/.env
+supabase/.env.local
+
+# ===================================
+# Lock Files (Selective)
+# ===================================
+
+# Flutter lock files (exclude for reproducible builds)
+# pubspec.lock  # Allow for package version control
+
+# Other lock files
+package-lock.json
+yarn.lock
+
+# ===================================
+# Generated Files
+# ===================================
+
+# Auto-generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+**/*.generated.dart
