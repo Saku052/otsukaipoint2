@@ -20,27 +20,27 @@
 ## 🎯 実装サマリー
 
 ### 構成概要
-- **テーブル数**: 5個（users, families, family_members, shopping_lists, shopping_items）
-- **インデックス数**: 5個（最小限のパフォーマンス確保）
-- **RLSポリシー数**: 5個（シンプルな認証ベース）
-- **トリガー数**: 4個（updated_at自動更新のみ）
-- **推定総行数**: 約150行
+- **テーブル数**: 5個（profiles, families, family_members, shopping_lists, shopping_items）
+- **インデックス数**: 4個（最小限のパフォーマンス確保）
+- **RLSポリシー数**: 5個（シンプルなEXISTSパターン）
+- **トリガー数**: 0個（MVP不要）
+- **推定総行数**: 約100行
 
 ### MVP設計原則
 - ✅ **シンプル性最優先**: お買い物リスト共有の本質のみ実装
 - ✅ **5テーブル限定**: MVP必須機能のみ
-- ✅ **5インデックス限定**: 最小限のパフォーマンス確保
-- ✅ **シンプルRLS**: 過度に細分化されたポリシーを統合
-- ✅ **自動更新**: updated_atの自動更新のみ
+- ✅ **4インデックス限定**: 最小限のパフォーマンス確保
+- ✅ **シンプルRLS**: EXISTSパターンで直感的に
+- ✅ **トリガーなし**: MVP範囲外の機能は削除
 
 ### 削減効果
 | 項目 | 従来設計 | MVP設計 | 削減率 |
 |------|----------|---------|--------|
 | **テーブル数** | 16テーブル | 5テーブル | **69%削減** |
-| **インデックス数** | 15個 | 5個 | **67%削減** |
+| **インデックス数** | 15個 | 4個 | **73%削減** |
 | **RLSポリシー数** | 25個 | 5個 | **80%削減** |
-| **トリガー/関数** | 12個 | 5個 | **58%削減** |
-| **実装行数** | 約2,000行 | 約150行 | **92%削減** |
+| **トリガー/関数** | 12個 | 0個 | **100%削減** |
+| **実装行数** | 約2,000行 | 約100行 | **95%削減** |
 
 ---
 
@@ -64,27 +64,22 @@
 -- 5テーブル構成
 -- ===============================================
 
--- 1. usersテーブル（ユーザー管理）
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    auth_id UUID NOT NULL UNIQUE,
+-- 1. profilesテーブル（ユーザー管理）
+CREATE TABLE profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id),
     name VARCHAR(50) NOT NULL,
-    role VARCHAR(10) NOT NULL CHECK (role IN ('parent', 'child')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE users IS 'ユーザー管理（MVP基本機能）';
-COMMENT ON COLUMN users.auth_id IS 'Supabase Auth連携用UUID';
-COMMENT ON COLUMN users.role IS '親または子の役割';
+COMMENT ON TABLE profiles IS 'ユーザープロフィール管理（MVP基本機能）';
+COMMENT ON COLUMN profiles.id IS 'Supabase Auth連携用UUID';
 
 -- 2. familiesテーブル（家族グループ管理）
 CREATE TABLE families (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
-    created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_by_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE families IS '家族グループ管理';
@@ -94,7 +89,7 @@ COMMENT ON COLUMN families.created_by_user_id IS '家族を作成したユーザ
 CREATE TABLE family_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     UNIQUE(family_id, user_id)
@@ -108,9 +103,8 @@ CREATE TABLE shopping_lists (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
     title VARCHAR(100) NOT NULL,
-    created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_by_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE shopping_lists IS 'お買い物リスト管理';
@@ -121,11 +115,10 @@ CREATE TABLE shopping_items (
     shopping_list_id UUID NOT NULL REFERENCES shopping_lists(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     completed BOOLEAN NOT NULL DEFAULT FALSE,
-    completed_by_user_id UUID REFERENCES users(id),
+    completed_by_user_id UUID REFERENCES profiles(id),
     completed_at TIMESTAMPTZ,
-    created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_by_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE shopping_items IS 'お買い物アイテム管理';
@@ -141,8 +134,7 @@ COMMENT ON COLUMN shopping_items.completed IS 'アイテム完了フラグ';
 -- MVP必須インデックス（パフォーマンス最適化）
 -- ===============================================
 
--- 1. 認証ID検索（ログイン時に使用）
-CREATE INDEX idx_users_auth_id ON users(auth_id);
+-- 認証IDはPKなのでインデックス不要（auth.users(id)が自動インデックス）
 
 -- 2. 家族メンバー取得（家族ID→メンバー一覧）
 CREATE INDEX idx_family_members_family_id ON family_members(family_id);
@@ -168,62 +160,59 @@ CREATE INDEX idx_family_members_user_id ON family_members(user_id);
 -- ===============================================
 
 -- RLS有効化
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE families ENABLE ROW LEVEL SECURITY;
 ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shopping_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shopping_items ENABLE ROW LEVEL SECURITY;
 
--- 1. users: 自分の情報のみアクセス可能
-CREATE POLICY users_policy ON users
-    FOR ALL
-    TO authenticated
-    USING (auth_id = auth.uid());
+-- 1. profiles: 自分の情報のみアクセス可能
+CREATE POLICY "authenticated_users_own_profile" ON profiles
+    FOR ALL TO authenticated
+    USING (id = auth.uid());
 
 -- 2. families: 参加している家族のみアクセス可能
-CREATE POLICY families_policy ON families
-    FOR ALL
-    TO authenticated
+CREATE POLICY "authenticated_users_family_access" ON families
+    FOR ALL TO authenticated
     USING (
-        id IN (
-            SELECT family_id FROM family_members
-            WHERE user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
+        EXISTS (
+            SELECT 1 FROM family_members
+            WHERE family_id = families.id
+            AND user_id = auth.uid()
         )
     );
 
 -- 3. family_members: 参加している家族のメンバー情報のみアクセス可能
-CREATE POLICY family_members_policy ON family_members
-    FOR ALL
-    TO authenticated
+CREATE POLICY "authenticated_users_family_members_access" ON family_members
+    FOR ALL TO authenticated
     USING (
-        family_id IN (
-            SELECT family_id FROM family_members
-            WHERE user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
+        EXISTS (
+            SELECT 1 FROM family_members fm
+            WHERE fm.family_id = family_members.family_id
+            AND fm.user_id = auth.uid()
         )
     );
 
 -- 4. shopping_lists: 参加している家族のリストのみアクセス可能
-CREATE POLICY shopping_lists_policy ON shopping_lists
-    FOR ALL
-    TO authenticated
+CREATE POLICY "authenticated_users_shopping_lists_access" ON shopping_lists
+    FOR ALL TO authenticated
     USING (
-        family_id IN (
-            SELECT family_id FROM family_members
-            WHERE user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
+        EXISTS (
+            SELECT 1 FROM family_members
+            WHERE family_id = shopping_lists.family_id
+            AND user_id = auth.uid()
         )
     );
 
 -- 5. shopping_items: 参加している家族のリストのアイテムのみアクセス可能
-CREATE POLICY shopping_items_policy ON shopping_items
-    FOR ALL
-    TO authenticated
+CREATE POLICY "authenticated_users_shopping_items_access" ON shopping_items
+    FOR ALL TO authenticated
     USING (
-        shopping_list_id IN (
-            SELECT id FROM shopping_lists
-            WHERE family_id IN (
-                SELECT family_id FROM family_members
-                WHERE user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
-            )
+        EXISTS (
+            SELECT 1 FROM shopping_lists sl
+            INNER JOIN family_members fm ON sl.family_id = fm.family_id
+            WHERE sl.id = shopping_items.shopping_list_id
+            AND fm.user_id = auth.uid()
         )
     );
 ```
@@ -234,38 +223,11 @@ CREATE POLICY shopping_items_policy ON shopping_items
 
 ```sql
 -- ===============================================
--- 更新日時自動更新トリガー（MVP最小限）
+-- MVP版ではトリガー不要
+-- 更新日時追跡はMVP範囲外のため削除
 -- ===============================================
 
--- トリガー関数定義
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 各テーブルにトリガー適用
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_families_updated_at
-    BEFORE UPDATE ON families
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_shopping_lists_updated_at
-    BEFORE UPDATE ON shopping_lists
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_shopping_items_updated_at
-    BEFORE UPDATE ON shopping_items
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+-- トリガーなし
 ```
 
 ---
@@ -277,31 +239,29 @@ CREATE TRIGGER update_shopping_items_updated_at
 -- MVP機能テスト用サンプルデータ
 -- ===============================================
 
--- サンプルユーザー（親）
-INSERT INTO users (auth_id, name, role) VALUES
-('550e8400-e29b-41d4-a716-446655440000', 'ママ', 'parent');
-
--- サンプルユーザー（子）
-INSERT INTO users (auth_id, name, role) VALUES
-('550e8400-e29b-41d4-a716-446655440001', 'たろう', 'child');
+-- サンプルプロフィール
+-- 注意: auth.usersに先に作成されている必要があります
+INSERT INTO profiles (id, name) VALUES
+('550e8400-e29b-41d4-a716-446655440000', 'ママ'),
+('550e8400-e29b-41d4-a716-446655440001', 'たろう');
 
 -- サンプル家族
 INSERT INTO families (name, created_by_user_id) VALUES
-('田中家', (SELECT id FROM users WHERE name = 'ママ'));
+('田中家', (SELECT id FROM profiles WHERE name = 'ママ'));
 
 -- 家族メンバー追加
 INSERT INTO family_members (family_id, user_id) VALUES
-((SELECT id FROM families WHERE name = '田中家'), (SELECT id FROM users WHERE name = 'ママ')),
-((SELECT id FROM families WHERE name = '田中家'), (SELECT id FROM users WHERE name = 'たろう'));
+((SELECT id FROM families WHERE name = '田中家'), (SELECT id FROM profiles WHERE name = 'ママ')),
+((SELECT id FROM families WHERE name = '田中家'), (SELECT id FROM profiles WHERE name = 'たろう'));
 
 -- サンプルお買い物リスト
 INSERT INTO shopping_lists (family_id, title, created_by_user_id) VALUES
-((SELECT id FROM families WHERE name = '田中家'), '今日のお買い物', (SELECT id FROM users WHERE name = 'ママ'));
+((SELECT id FROM families WHERE name = '田中家'), '今日のお買い物', (SELECT id FROM profiles WHERE name = 'ママ'));
 
 -- サンプルお買い物アイテム
 INSERT INTO shopping_items (shopping_list_id, name, created_by_user_id) VALUES
-((SELECT id FROM shopping_lists WHERE title = '今日のお買い物'), '牛乳', (SELECT id FROM users WHERE name = 'ママ')),
-((SELECT id FROM shopping_lists WHERE title = '今日のお買い物'), 'パン', (SELECT id FROM users WHERE name = 'ママ'));
+((SELECT id FROM shopping_lists WHERE title = '今日のお買い物'), '牛乳', (SELECT id FROM profiles WHERE name = 'ママ')),
+((SELECT id FROM shopping_lists WHERE title = '今日のお買い物'), 'パン', (SELECT id FROM profiles WHERE name = 'ママ'));
 ```
 
 ---
@@ -317,29 +277,29 @@ INSERT INTO shopping_items (shopping_list_id, name, created_by_user_id) VALUES
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
-AND table_name IN ('users', 'families', 'family_members', 'shopping_lists', 'shopping_items');
+AND table_name IN ('profiles', 'families', 'family_members', 'shopping_lists', 'shopping_items');
 
 -- 2. インデックス確認
 SELECT indexname, tablename
 FROM pg_indexes
 WHERE schemaname = 'public'
-AND tablename IN ('users', 'families', 'family_members', 'shopping_lists', 'shopping_items');
+AND tablename IN ('profiles', 'families', 'family_members', 'shopping_lists', 'shopping_items');
 
 -- 3. RLS有効化確認
 SELECT schemaname, tablename, rowsecurity
 FROM pg_tables
 WHERE schemaname = 'public'
-AND tablename IN ('users', 'families', 'family_members', 'shopping_lists', 'shopping_items');
+AND tablename IN ('profiles', 'families', 'family_members', 'shopping_lists', 'shopping_items');
 
 -- 4. ポリシー確認
 SELECT schemaname, tablename, policyname
 FROM pg_policies
 WHERE schemaname = 'public';
 
--- 5. トリガー確認
-SELECT trigger_name, event_object_table
-FROM information_schema.triggers
-WHERE trigger_schema = 'public';
+-- 5. トリガー確認（MVPではトリガーなし）
+-- SELECT trigger_name, event_object_table
+-- FROM information_schema.triggers
+-- WHERE trigger_schema = 'public';
 ```
 
 ---
@@ -348,11 +308,9 @@ WHERE trigger_schema = 'public';
 
 ```
 ┌─────────────────────────────────────────────┐
-│            users (ユーザー)                   │
-│  - id (PK)                                  │
-│  - auth_id (UNIQUE) ← Supabase Auth連携     │
+│        profiles (プロフィール)                │
+│  - id (PK) ← auth.users(id)                │
 │  - name                                     │
-│  - role (parent/child)                      │
 └─────────────┬───────────────────────────────┘
               │
               ├─────────────────┐
