@@ -9,7 +9,10 @@ class AuthService {
   /// Googleでログイン
   Future<void> signInWithGoogle() async {
     try {
-      await _client.auth.signInWithOAuth(OAuthProvider.google);
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'https://ssnmbokstwtgleejoxww.supabase.co/auth/v1/callback',
+      );
       print('ログイン成功'); // MVP: print()のみ
     } catch (e) {
       print('ログインエラー: $e');
