@@ -127,7 +127,7 @@ COMMENT ON COLUMN shopping_items.completed IS 'アイテム完了フラグ';
 
 ---
 
-## 2️⃣ インデックス作成SQL（5個のみ）
+## 2️⃣ インデックス作成SQL（4個のみ）
 
 ```sql
 -- ===============================================
@@ -136,16 +136,16 @@ COMMENT ON COLUMN shopping_items.completed IS 'アイテム完了フラグ';
 
 -- 認証IDはPKなのでインデックス不要（auth.users(id)が自動インデックス）
 
--- 2. 家族メンバー取得（家族ID→メンバー一覧）
+-- 1. 家族メンバー取得（家族ID→メンバー一覧）
 CREATE INDEX idx_family_members_family_id ON family_members(family_id);
 
--- 3. 家族のリスト取得（家族ID→リスト一覧）
+-- 2. 家族のリスト取得（家族ID→リスト一覧）
 CREATE INDEX idx_shopping_lists_family_id ON shopping_lists(family_id);
 
--- 4. リストのアイテム取得（リストID→アイテム一覧）
+-- 3. リストのアイテム取得（リストID→アイテム一覧）
 CREATE INDEX idx_shopping_items_list_id ON shopping_items(shopping_list_id);
 
--- 5. ユーザーのメンバーシップ取得（ユーザーID→参加家族）
+-- 4. ユーザーのメンバーシップ取得（ユーザーID→参加家族）
 CREATE INDEX idx_family_members_user_id ON family_members(user_id);
 ```
 
@@ -242,8 +242,8 @@ CREATE POLICY "authenticated_users_shopping_items_access" ON shopping_items
 -- サンプルプロフィール
 -- 注意: auth.usersに先に作成されている必要があります
 INSERT INTO profiles (id, name) VALUES
-('550e8400-e29b-41d4-a716-446655440000', 'ママ'),
-('550e8400-e29b-41d4-a716-446655440001', 'たろう');
+('8a1786d9-eb5a-4491-a7c1-f171f2dab1c4', 'ママ'),
+('50ee6320-73a3-476d-b0d8-093853d602d9', 'たろう');
 
 -- サンプル家族
 INSERT INTO families (name, created_by_user_id) VALUES
@@ -378,18 +378,18 @@ supabase db push --db-url $DATABASE_URL
 ## ✅ 実装チェックリスト
 
 ### データベース構築
-- [ ] Step 1: テーブル作成SQL実行完了
-- [ ] Step 2: インデックス作成SQL実行完了
-- [ ] Step 3: RLSポリシー設定SQL実行完了
-- [ ] Step 4: トリガー設定SQL実行完了
-- [ ] Step 5: テストデータ投入完了（オプション）
+- [x] Step 1: テーブル作成SQL実行完了
+- [x] Step 2: インデックス作成SQL実行完了
+- [x] Step 3: RLSポリシー設定SQL実行完了
+- [x] Step 4: トリガー設定SQL実行完了（MVPでは不要）
+- [x] Step 5: テストデータ投入完了（オプション）
 
 ### 動作確認
-- [ ] テーブル作成確認（5テーブル）
-- [ ] インデックス確認（5インデックス）
-- [ ] RLS有効化確認（5テーブル）
-- [ ] ポリシー確認（5ポリシー）
-- [ ] トリガー確認（4トリガー）
+- [x] テーブル作成確認（5テーブル）
+- [x] インデックス確認（4インデックス + 6自動生成）
+- [x] RLS有効化確認（5テーブル）
+- [x] ポリシー確認（5ポリシー）
+- [x] トリガー確認（0トリガー・MVP不要）
 
 ### 機能テスト
 - [ ] ユーザー登録テスト
