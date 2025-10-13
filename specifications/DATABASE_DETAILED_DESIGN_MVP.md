@@ -8,10 +8,11 @@
 | 項目 | 内容 |
 |------|------|
 | **文書タイトル** | おつかいポイント データベース詳細設計書（MVP版） |
-| **バージョン** | v2.0 (MVP最適化版) |
+| **バージョン** | v2.1 (PRD v1.3対応) |
 | **作成日** | 2025年09月28日 |
+| **最終更新** | 2025年10月12日 |
 | **作成者** | ビジネスロジック担当エンジニア |
-| **承認状況** | ドラフト |
+| **承認状況** | 承認済み |
 | **対象読者** | DevOpsエンジニア、フロントエンドエンジニア、QAエンジニア |
 
 ---
@@ -66,12 +67,13 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     auth_id UUID NOT NULL UNIQUE,
     name VARCHAR(50) NOT NULL,
-    role VARCHAR(10) NOT NULL CHECK (role IN ('parent', 'child')),
+    role VARCHAR(10) NOT NULL CHECK (role IN ('parent', 'child')), -- PRD v1.3: Supabaseに保存（デバイス変更・再インストール時の永続性確保）
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE users IS 'ユーザー管理（MVP基本機能）';
+COMMENT ON COLUMN users.role IS 'ユーザー役割（parent/child）- UIフロー分岐と表示判定に使用、権限制御には使用しない（MVP方針）';
 ```
 
 ### 2.2 families テーブル
