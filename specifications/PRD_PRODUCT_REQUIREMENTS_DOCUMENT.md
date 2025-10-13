@@ -154,19 +154,23 @@ So that 何を買えばいいか迷わずにお使いができる
 #### 3.3.3 データモデル概要
 
 **Supabaseに保存するデータ**:
-- ✅ `users`: ユーザーID、名前、**役割（parent/child）** ← v1.3で追加
+- ✅ `profiles`: ユーザーID、名前、**役割（parent/child）** ← v1.3で追加
 - ✅ `families`: 家族グループID、QRコード
 - ✅ `family_members`: ユーザー-家族の紐付け
-- ✅ `lists`: お買い物リスト
-- ✅ `items`: 商品データ
+- ✅ `shopping_lists`: お買い物リスト
+- ✅ `shopping_items`: 商品データ
 
 **ローカルストレージのみに保存**:
 - 📱 **初回登録完了フラグ**: 初回フロー判定用（`is_onboarding_completed`）
 - 📱 **選択中の家族ID**: 将来の複数家族対応用（`selected_family_id`）
 
 **v1.2からの変更点**:
-- ✅ `users.role`カラムを追加（'parent' or 'child'）
+- ✅ `profiles.role`カラムを追加（'parent' or 'child'）
 - ❌ ローカルストレージの`user_role`を削除（Supabaseに移行）
+
+**テーブル命名規則**:
+- `profiles`: Supabaseベストプラクティス（`auth.users`を参照するpublic schema用テーブル）
+- `shopping_lists`, `shopping_items`: ドメインモデル明示のための複数形命名
 
 ### 3.4 機能範囲外（明確に除外）
 
@@ -290,7 +294,7 @@ So that 何を買えばいいか迷わずにお使いができる
 
 | テーブル | 保存内容 | 理由 |
 |---------|---------|------|
-| `users` | ユーザーID、名前、**役割（parent/child）** | デバイス変更・再インストール時の永続性確保 |
+| `profiles` | ユーザーID、名前、**役割（parent/child）** | デバイス変更・再インストール時の永続性確保 |
 | `families` | 家族ID、QRコード | 複数デバイス間で同期が必要 |
 | `family_members` | ユーザー-家族紐付け | リレーションシップ管理 |
 | `lists` | お買い物リスト | リアルタイム同期が必要 |

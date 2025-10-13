@@ -57,23 +57,29 @@
 
 ## 🏗️ 2. MVP必須5テーブル設計
 
-### 2.1 users テーブル
+### 2.1 profiles テーブル
 
 ```sql
 -- ===============================================
 -- ユーザー管理テーブル（MVP基本機能のみ）
+-- Supabaseベストプラクティス: auth.usersを参照するpublic.profiles
 -- ===============================================
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    auth_id UUID NOT NULL UNIQUE,
+CREATE TABLE profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id),
     name VARCHAR(50) NOT NULL,
     role VARCHAR(10) NOT NULL CHECK (role IN ('parent', 'child')), -- PRD v1.3: Supabaseに保存（デバイス変更・再インストール時の永続性確保）
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE users IS 'ユーザー管理（MVP基本機能）';
-COMMENT ON COLUMN users.role IS 'ユーザー役割（parent/child）- UIフロー分岐と表示判定に使用、権限制御には使用しない（MVP方針）';
+COMMENT ON TABLE profiles IS 'ユーザープロフィール管理（MVP基本機能）- Supabase Auth連携';
+COMMENT ON COLUMN profiles.id IS 'Supabase Auth連携用UUID（auth.users.idと同期）';
+COMMENT ON COLUMN profiles.role IS 'ユーザー役割（parent/child）- UIフロー分岐と表示判定に使用、権限制御には使用しない（MVP方針）';
+
+**設計変更（v2.1）**:
+- テーブル名: `users` → `profiles` (Supabaseベストプラクティス準拠)
+- PRIMARY KEY: `id UUID DEFAULT gen_random_uuid()` → `id UUID REFERENCES auth.users(id)` (Supabase Auth連携)
+- `auth_id`カラム削除: `id`がauth.users.idを直接参照
+- `updated_at`カラム削除: MVP不要（作成日時のみで十分）
 ```
 
 ### 2.2 families テーブル
@@ -85,12 +91,12 @@ COMMENT ON COLUMN users.role IS 'ユーザー役割（parent/child）- UIフロ�
 CREATE TABLE families (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
-    created_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_by_user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE families IS '家族グループ管理';
+COMMENT ON COLUMN families.created_by_user_id IS '家族を作成したユーザー（profiles.id参照）';
 ```
 
 ### 2.3 family_members テーブル
@@ -102,9 +108,9 @@ COMMENT ON TABLE families IS '家族グループ管理';
 CREATE TABLE family_members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     UNIQUE(family_id, user_id)
 );
 
