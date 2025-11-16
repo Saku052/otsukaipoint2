@@ -11,7 +11,7 @@ class AuthService {
     try {
       await _client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'https://ssnmbokstwtgleejoxww.supabase.co/auth/v1/callback',
+        redirectTo: 'otsukaipoint://login-callback',
       );
       print('ログイン成功'); // MVP: print()のみ
     } catch (e) {

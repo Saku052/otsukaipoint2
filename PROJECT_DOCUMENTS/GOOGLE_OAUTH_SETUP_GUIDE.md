@@ -78,7 +78,7 @@
 3. **Redirect URLs** に以下を追加（開発用）:
    ```
    http://localhost:3000/**
-   otsukaipoint://login-callback
+   https://ssnmbokstwtgleejoxww.supabase.co/auth/v1/callback
    ```
 
 ---
