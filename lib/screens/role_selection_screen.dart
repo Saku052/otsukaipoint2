@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
-import '../providers/family_provider.dart';
 
 /// 役割選択画面（PRD v1.3対応）
 /// Google OAuth認証後、新規ユーザーが役割（親/子）を選択
