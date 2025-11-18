@@ -12,10 +12,7 @@ class UserService {
   ///
   /// デバイス変更・再インストール時の永続性確保のため、
   /// roleをSupabase profilesテーブルに保存
-  Future<void> createUser({
-    required String name,
-    required String role,
-  }) async {
+  Future<void> createUser({required String name, required String role}) async {
     try {
       await _client.from('profiles').insert({
         'id': _client.auth.currentUser!.id,

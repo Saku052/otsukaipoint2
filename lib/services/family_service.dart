@@ -20,10 +20,11 @@ class FamilyService {
       if (userId == null) throw '未認証ユーザー';
 
       // 家族作成
-      final response = await _client.from('families').insert({
-        'name': familyName,
-        'created_by_user_id': userId,
-      }).select().single();
+      final response = await _client
+          .from('families')
+          .insert({'name': familyName, 'created_by_user_id': userId})
+          .select()
+          .single();
 
       final familyId = response['id'] as String;
 

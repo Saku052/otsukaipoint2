@@ -13,9 +13,7 @@ class SettingsScreen extends ConsumerWidget {
     final authService = ref.watch(authServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('設定'),
-      ),
+      appBar: AppBar(title: const Text('設定')),
       body: ListView(
         children: [
           ListTile(
@@ -48,9 +46,9 @@ class SettingsScreen extends ConsumerWidget {
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('ログアウトエラー: $e')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('ログアウトエラー: $e')));
                   }
                 }
               }

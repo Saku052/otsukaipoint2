@@ -59,7 +59,11 @@ void main() {
 
       expect(authServiceImplemented, isTrue, reason: 'AuthService(35行)実装完了');
       expect(dataServiceImplemented, isTrue, reason: 'DataService(157行)実装完了');
-      expect(realtimeServiceImplemented, isTrue, reason: 'RealtimeService(78行)実装完了');
+      expect(
+        realtimeServiceImplemented,
+        isTrue,
+        reason: 'RealtimeService(78行)実装完了',
+      );
     });
 
     test('MVP原則準拠確認', () {
@@ -67,16 +71,18 @@ void main() {
       const totalLines = 270; // 35 + 157 + 78
       const targetLines = 300;
 
-      expect(totalLines, lessThanOrEqualTo(targetLines),
-          reason: '合計270行（目標300行以内）達成');
+      expect(
+        totalLines,
+        lessThanOrEqualTo(targetLines),
+        reason: '合計270行（目標300行以内）達成',
+      );
     });
 
     test('基盤サービス実装完了', () {
       // Week1の完了判定: 基盤サービス層完成
       const week1Completed = true;
 
-      expect(week1Completed, isTrue,
-          reason: 'Week1基盤実装（認証・データ・リアルタイム）完了');
+      expect(week1Completed, isTrue, reason: 'Week1基盤実装（認証・データ・リアルタイム）完了');
     });
   });
 

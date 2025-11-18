@@ -56,8 +56,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       // ユーザー登録チェック
-      final isRegistered =
-          await ref.read(userServiceProvider).isUserRegistered();
+      final isRegistered = await ref
+          .read(userServiceProvider)
+          .isUserRegistered();
 
       if (!mounted) return;
 
@@ -85,19 +86,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => ListScreen(
-                  familyId: familyId,
-                  listId: listId,
-                ),
+                builder: (context) =>
+                    ListScreen(familyId: familyId, listId: listId),
               ),
             );
           } else {
             // リストが存在しない場合
             print('リストが存在しません');
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('お買い物リストが見つかりません')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('お買い物リストが見つかりません')));
           }
         } else {
           // 家族未所属 → QRスキャン画面へ（孤児状態）
@@ -113,9 +112,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       print('認証後エラー: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('認証後エラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('認証後エラー: $e')));
       }
     }
   }
@@ -131,9 +130,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ログインエラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ログインエラー: $e')));
       }
     }
   }
@@ -141,17 +140,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('おつかいポイント'),
-      ),
+      appBar: AppBar(title: const Text('おつかいポイント')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '家族でお買い物リストを共有',
-              style: TextStyle(fontSize: 18),
-            ),
+            const Text('家族でお買い物リストを共有', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 32),
             _isLoading
                 ? const CircularProgressIndicator()

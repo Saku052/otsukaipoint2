@@ -50,10 +50,9 @@ class _QRScanScreenState extends ConsumerState<QRScanScreen> {
       }
 
       // 家族に参加
-      await ref.read(familyServiceProvider).addMember(
-            familyId: familyId,
-            userId: userId,
-          );
+      await ref
+          .read(familyServiceProvider)
+          .addMember(familyId: familyId, userId: userId);
 
       if (!mounted) return;
 
@@ -71,10 +70,8 @@ class _QRScanScreenState extends ConsumerState<QRScanScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ListScreen(
-              familyId: familyId,
-              listId: listId,
-            ),
+            builder: (context) =>
+                ListScreen(familyId: familyId, listId: listId),
           ),
         );
       } else {
@@ -91,9 +88,9 @@ class _QRScanScreenState extends ConsumerState<QRScanScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -110,16 +107,11 @@ class _QRScanScreenState extends ConsumerState<QRScanScreen> {
       ),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _controller, onDetect: _onDetect),
           if (_isProcessing)
             Container(
               color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
           Positioned(
             bottom: 0,
@@ -133,19 +125,13 @@ class _QRScanScreenState extends ConsumerState<QRScanScreen> {
                 children: [
                   Text(
                     '親のQRコードをスキャンしてください',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 8),
                   Text(
                     'QRコードを枠内に収めてください',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                 ],

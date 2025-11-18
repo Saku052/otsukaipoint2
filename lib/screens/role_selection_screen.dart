@@ -34,10 +34,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
     try {
       // 親ユーザー登録
-      await ref.read(userServiceProvider).createUser(
-            name: name,
-            role: 'parent',
-          );
+      await ref
+          .read(userServiceProvider)
+          .createUser(name: name, role: 'parent');
 
       // 家族作成画面へ遷移
       if (!mounted) return;
@@ -61,10 +60,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
     try {
       // 子ユーザー登録
-      await ref.read(userServiceProvider).createUser(
-            name: name,
-            role: 'child',
-          );
+      await ref.read(userServiceProvider).createUser(name: name, role: 'child');
 
       // QRスキャン画面へ遷移
       if (!mounted) return;
@@ -78,17 +74,15 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('役割選択'),
-      ),
+      appBar: AppBar(title: const Text('役割選択')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

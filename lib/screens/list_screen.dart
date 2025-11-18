@@ -11,11 +11,7 @@ class ListScreen extends ConsumerStatefulWidget {
   final String familyId;
   final String listId;
 
-  const ListScreen({
-    super.key,
-    required this.familyId,
-    required this.listId,
-  });
+  const ListScreen({super.key, required this.familyId, required this.listId});
 
   @override
   ConsumerState<ListScreen> createState() => _ListScreenState();
@@ -50,9 +46,9 @@ class _ListScreenState extends ConsumerState<ListScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('読み込みエラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('読み込みエラー: $e')));
       }
     }
   }
@@ -64,9 +60,9 @@ class _ListScreenState extends ConsumerState<ListScreen> {
       await _loadItems();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('更新エラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('更新エラー: $e')));
       }
     }
   }
@@ -106,9 +102,9 @@ class _ListScreenState extends ConsumerState<ListScreen> {
         await _loadItems();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('追加エラー: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('追加エラー: $e')));
         }
       }
     }
@@ -136,9 +132,7 @@ class _ListScreenState extends ConsumerState<ListScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -147,37 +141,33 @@ class _ListScreenState extends ConsumerState<ListScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _items.isEmpty
-              ? const Center(
-                  child: Text(
-                    '商品がありません\n+ボタンで追加してください',
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _items.length,
-                  itemBuilder: (context, index) {
-                    final item = _items[index];
-                    final completed = item['completed'] as bool? ?? false;
+          ? const Center(
+              child: Text(
+                '商品がありません\n+ボタンで追加してください',
+                textAlign: TextAlign.center,
+              ),
+            )
+          : ListView.builder(
+              itemCount: _items.length,
+              itemBuilder: (context, index) {
+                final item = _items[index];
+                final completed = item['completed'] as bool? ?? false;
 
-                    return ListTile(
-                      title: Text(
-                        item['name'] as String,
-                        style: TextStyle(
-                          decoration: completed
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
-                      trailing: Checkbox(
-                        value: completed,
-                        onChanged: (_) => _toggleItem(
-                          item['id'] as String,
-                          completed,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                return ListTile(
+                  title: Text(
+                    item['name'] as String,
+                    style: TextStyle(
+                      decoration: completed ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  trailing: Checkbox(
+                    value: completed,
+                    onChanged: (_) =>
+                        _toggleItem(item['id'] as String, completed),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addItem,
         child: const Icon(Icons.add),
