@@ -93,8 +93,9 @@ void main() {
       );
 
       // 両方のファイルをチェック
-      final qrScreenContent =
-          qrScreenFile.existsSync() ? qrScreenFile.readAsStringSync() : '';
+      final qrScreenContent = qrScreenFile.existsSync()
+          ? qrScreenFile.readAsStringSync()
+          : '';
       final qrScanScreenContent = qrScanScreenFile.existsSync()
           ? qrScanScreenFile.readAsStringSync()
           : '';
@@ -225,9 +226,8 @@ void main() {
       // QRScreen関連ファイル
       final qrScreenFile = File('lib/screens/qr_screen.dart');
       final qrScanScreenFile = File('lib/screens/qr_scan_screen.dart');
-      final qrScreen = (qrScreenFile.existsSync()
-              ? qrScreenFile.readAsStringSync()
-              : '') +
+      final qrScreen =
+          (qrScreenFile.existsSync() ? qrScreenFile.readAsStringSync() : '') +
           (qrScanScreenFile.existsSync()
               ? qrScanScreenFile.readAsStringSync()
               : '');
@@ -292,9 +292,8 @@ void main() {
       // QRScreen関連ファイル
       final qrScreenFile = File('lib/screens/qr_screen.dart');
       final qrScanScreenFile = File('lib/screens/qr_scan_screen.dart');
-      final qrScreen = (qrScreenFile.existsSync()
-              ? qrScreenFile.readAsStringSync()
-              : '') +
+      final qrScreen =
+          (qrScreenFile.existsSync() ? qrScreenFile.readAsStringSync() : '') +
           (qrScanScreenFile.existsSync()
               ? qrScanScreenFile.readAsStringSync()
               : '');
@@ -321,7 +320,8 @@ void main() {
       expect(qrScreen.contains('AppBar'), isTrue);
       // QRScreenはElevatedButtonまたはMobileScannerなどのQRコンポーネントを持つ
       expect(
-        qrScreen.contains('ElevatedButton') || qrScreen.contains('MobileScanner'),
+        qrScreen.contains('ElevatedButton') ||
+            qrScreen.contains('MobileScanner'),
         isTrue,
       );
 
