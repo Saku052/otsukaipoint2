@@ -12,10 +12,7 @@ class DataService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw '未認証';
 
-      await _client.from('profiles').insert({
-        'id': userId,
-        'name': name,
-      });
+      await _client.from('profiles').insert({'id': userId, 'name': name});
       print('プロフィール作成成功');
     } catch (e) {
       print('プロフィール作成エラー: $e');
@@ -32,10 +29,7 @@ class DataService {
       // 家族作成
       final family = await _client
           .from('families')
-          .insert({
-            'name': familyName,
-            'created_by_user_id': userId,
-          })
+          .insert({'name': familyName, 'created_by_user_id': userId})
           .select()
           .single();
 
@@ -131,11 +125,14 @@ class DataService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw '未認証';
 
-      await _client.from('shopping_items').update({
-        'completed': completed,
-        'completed_by_user_id': completed ? userId : null,
-        'completed_at': completed ? DateTime.now().toIso8601String() : null,
-      }).eq('id', itemId);
+      await _client
+          .from('shopping_items')
+          .update({
+            'completed': completed,
+            'completed_by_user_id': completed ? userId : null,
+            'completed_at': completed ? DateTime.now().toIso8601String() : null,
+          })
+          .eq('id', itemId);
 
       print('アイテム更新成功');
     } catch (e) {

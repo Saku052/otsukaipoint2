@@ -8,12 +8,13 @@
 | 項目 | 内容 |
 |------|------|
 | **文書タイトル** | おつかいポイント データベース実装SQL |
-| **バージョン** | v1.0 |
+| **バージョン** | v1.1 (PRD v1.3対応) |
 | **作成日** | 2025年10月6日 |
+| **最終更新** | 2025年10月12日 |
 | **作成者** | ビジネスロジック担当エンジニア |
-| **承認状況** | 実装準備完了 |
+| **承認状況** | 承認済み |
 | **対象読者** | DevOpsエンジニア、ビジネスロジック担当 |
-| **前提文書** | データベース詳細設計書（MVP版）v2.0 |
+| **前提文書** | データベース詳細設計書（MVP版）v2.1 |
 
 ---
 
@@ -68,11 +69,13 @@
 CREATE TABLE profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id),
     name VARCHAR(50) NOT NULL,
+    role VARCHAR(10) NOT NULL CHECK (role IN ('parent', 'child')), -- PRD v1.3: デバイス変更・再インストール時の永続性確保
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE profiles IS 'ユーザープロフィール管理（MVP基本機能）';
 COMMENT ON COLUMN profiles.id IS 'Supabase Auth連携用UUID';
+COMMENT ON COLUMN profiles.role IS 'ユーザー役割（parent/child） - UIフロー分岐と表示判定に使用、権限制御には使用しない（MVP方針）';
 
 -- 2. familiesテーブル（家族グループ管理）
 CREATE TABLE families (

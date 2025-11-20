@@ -8,10 +8,11 @@
 | 項目 | 内容 |
 |------|------|
 | **文書タイトル** | おつかいポイント Supabase連携仕様書 |
-| **バージョン** | v4.0（MVP超軽量版） |
+| **バージョン** | v4.1（PRD v1.3対応） |
 | **修正日** | 2025年09月28日 |
+| **最終更新** | 2025年10月12日 |
 | **作成者** | ビジネスロジック担当エンジニア |
-| **承認状況** | MVP超軽量版・300行限定 |
+| **承認状況** | 承認済み |
 | **対象読者** | フロントエンドエンジニア、DevOpsエンジニア |
 
 ---
@@ -130,13 +131,53 @@ class AuthService {
 
 ## 💾 5. データサービス（MVP超軽量）
 
-### 5.1 DataService（50行）
+### 5.1 UserService（PRD v1.3: 役割管理追加）
 
 ```dart
-// services/data_service.dart（50行）
-class DataService {
+// services/user_service.dart（40行）
+class UserService {
   final _client = Supabase.instance.client;
-  
+
+  // ユーザー登録（PRD v1.3: roleをSupabaseに保存）
+  Future<void> createUser(String name, String role) async {
+    try {
+      await _client.from('profiles').insert({
+        'id': _client.auth.currentUser!.id,
+        'name': name,
+        'role': role, // PRD v1.3: デバイス変更・再インストール時の永続性確保
+      });
+      print('ユーザー登録: $name ($role)');
+    } catch (e) {
+      print('ユーザー登録エラー: $e');
+      rethrow;
+    }
+  }
+
+  // ユーザー情報取得（roleを含む）
+  Future<Map<String, dynamic>?> getUser() async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select()
+          .eq('id', _client.auth.currentUser!.id)
+          .single();
+      print('ユーザー取得: ${response['name']} (${response['role']})');
+      return response;
+    } catch (e) {
+      print('ユーザー取得エラー: $e');
+      return null;
+    }
+  }
+}
+```
+
+### 5.2 FamilyService
+
+```dart
+// services/family_service.dart（30行）
+class FamilyService {
+  final _client = Supabase.instance.client;
+
   // 家族作成
   Future<String> createFamily(String name) async {
     try {
